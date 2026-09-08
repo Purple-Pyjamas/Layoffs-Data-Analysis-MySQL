@@ -232,6 +232,7 @@ The cleaned dataset can now be used for exploratory data analysis to answer ques
 
 ## :open_file_folder: Repository Structure
 
+```
 Data-Cleaning-mySQL/
 │
 ├── README.md
@@ -241,5 +242,5 @@ Data-Cleaning-mySQL/
 │   
 │
 ├── data_cleaning.sql         cleaned SQL data
-
+```
 ---
