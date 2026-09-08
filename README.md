@@ -6,7 +6,7 @@ End-to-end data cleaning of a layoffs dataset using MySQL, while including dupli
 
 ## :clipboard: Project Overview
 
-Raw data is rarely ready for analysis. In this project, I used **MySQL** to clean and prepare a layoffs dataset for analysis, focusing on improving data quality, consistency, and usability. The data showed varying numbers of employees who were let go across various companies, as well as what stage those companies were in when the layoffs happened, and how much revenue was made in the same year. The cleaning process included:
+Raw data is rarely ready for analysis. In this project, I used **MySQL** to clean and prepare a layoffs dataset for analysis, focusing on improving data quality, consistency, and usability. The data showed varying numbers of employees who were laid off across various companies, as well as what stage those companies were in when the layoffs happened, and how much revenue was made in the same year. The cleaning process included:
 
 * Creating staging tables to preserve the original dataset
 * Identifying and removing duplicate records
@@ -48,7 +48,7 @@ The final result is a cleaner, more structured dataset that can be used for expl
 
 ---
 
-## 🔄 Data Cleaning Process
+## :microscope: Methodology
 
 ### 1. Created a Staging Table
 
@@ -89,22 +89,17 @@ This approach provides more control than simply using `SELECT DISTINCT`, especia
 
 ### 3. Standardized Company Names
 
-Extra spaces in company names can cause the same company to appear as different categories during analysis.
-
-I removed unnecessary spaces using:
+Extra spaces in company names can cause the same company to appear as different categories during analysis. So, I removed unnecessary spaces using:
 
 ```sql
 UPDATE layoffs_staging2
 SET company = TRIM(company);
 ```
 
----
 
 ### 4. Standardized Industry Categories
 
-I inspected the distinct industry values to identify inconsistencies.
-
-For example, multiple industry labels beginning with **Crypto** were standardized into one category:
+I inspected the distinct industry values to identify inconsistencies. For example, multiple industry labels beginning with **Crypto** were standardized into one category, instead of having some of them labelled "Cryptocurrency" and some labelled "Crypto":
 
 ```sql
 UPDATE layoffs_staging2
@@ -114,13 +109,10 @@ WHERE industry LIKE 'Crypto%';
 
 This prevents similar categories from being treated as separate industries during analysis.
 
----
 
 ### 5. Standardized Country Names
 
-Some country values contained unnecessary trailing punctuation.
-
-These were cleaned to create consistent country categories.
+Some country values contained unnecessary trailing punctuation. These were cleaned to create consistent country categories.
 
 ```sql
 UPDATE layoffs_staging2
@@ -128,13 +120,10 @@ SET country = TRIM(TRAILING '.' FROM country)
 WHERE country LIKE 'United States%';
 ```
 
----
 
 ### 6. Converted the Date Column
 
-The date field was initially stored as text.
-
-I converted the values into MySQL's date format using:
+The date field was initially stored as text. I converted the values into MySQL's date format using:
 
 ```sql
 STR_TO_DATE(date, '%m/%d/%Y')
@@ -149,13 +138,10 @@ MODIFY COLUMN date DATE;
 
 Using the correct datatype makes future time-series analysis, filtering, sorting, and aggregation much easier.
 
----
 
 ### 7. Handled Null and Blank Values
 
-I inspected columns containing missing information, particularly the `industry` field.
-
-Blank industry values were first converted to `NULL`:
+I inspected columns containing missing information, particularly the `industry` field. Blank industry values were first converted to `NULL`:
 
 ```sql
 UPDATE layoffs_staging2
@@ -163,13 +149,10 @@ SET industry = NULL
 WHERE industry = '';
 ```
 
----
 
 ### 8. Populated Missing Industry Data
 
-Some companies had multiple records where one record contained the industry and another did not.
-
-I used a **self join** to match companies with themselves and populate the missing industry values from records where that information already existed.
+Some companies had multiple records where one record contained the industry, and another did not. I used a **self-join** to match companies with themselves and populate the missing industry values from records where that information already existed. This solved the missing data problem encountered in the previous step, and it allowed useful information already present within the dataset to be used instead of unnecessarily deleting those records.
 
 ```sql
 UPDATE layoffs_staging2 t1
@@ -180,11 +163,8 @@ WHERE t1.industry IS NULL
 AND t2.industry IS NOT NULL;
 ```
 
-This allowed useful information already present within the dataset to be used instead of unnecessarily deleting those records.
 
----
-
-### 9. Removed Records With Insufficient Layoff Data
+### 9. Removed Unnecessary Data
 
 Records where both:
 
@@ -202,22 +182,18 @@ WHERE total_laid_off IS NULL
 AND percentage_laid_off IS NULL;
 ```
 
----
 
 ### 10. Removed Temporary Columns
 
-The `row_num` column was created only to help identify duplicates.
-
-After it had served its purpose, I removed it:
+The `row_num` column was created only to help identify duplicates. After it had served its purpose, I removed it:
 
 ```sql
 ALTER TABLE layoffs_staging2
 DROP COLUMN row_num;
 ```
 
----
 
-## 🧠 Key Lessons
+## :bulb: Key Lessons
 
 This project reinforced an important lesson:
 
@@ -228,19 +204,19 @@ I also gained practical experience using SQL techniques such as:
 * Window functions for duplicate detection
 * Self joins for filling missing information
 * String functions for standardization
-* Date transformations
+* Data transformations
 * Null-value handling
 * Safe staging-table workflows
 
 ---
 
-## 🎯 Skills Demonstrated
+## :dart: Skills Demonstrated
 
 **Data Cleaning • SQL • MySQL • Data Quality • Data Transformation • Window Functions • CTEs • Joins • Data Standardization • Missing Data Handling**
 
 ---
 
-## 🚀 Possible Next Steps
+## ❓ Possible Next Steps
 
 The cleaned dataset can now be used for exploratory data analysis to answer questions such as:
 
@@ -253,22 +229,16 @@ The cleaned dataset can now be used for exploratory data analysis to answer ques
 
 ---
 
-## 📂 Repository Structure
+## :open_file_folder: Repository Structure
 
-```text
-layoffs-data-cleaning-mysql/
+Data-Cleaning-mySQL/
 │
-├── Data cleaning in MySQL.sql
-└── README.md
-```
+├── README.md
+│
+│
+├── layoffs.csv               dataset
+│   
+│
+├── data_cleaning.sql         cleaned SQL data
 
 ---
-
-# Portfolio Description
-
-### Layoffs Data Cleaning with MySQL
-
-Cleaned and transformed a layoffs dataset using **MySQL**, creating a structured dataset suitable for further analysis. I built a staging-table workflow to preserve the raw data, identified and removed duplicates using `ROW_NUMBER()` and window functions, standardized company, industry and country values, converted text-based dates into SQL `DATE` format, handled null values, and used a self-join to populate missing industry information from existing company records.
-
-**Skills:** MySQL, SQL, Data Cleaning, Data Transformation, Window Functions, CTEs, Self Joins, Data Standardization and Data Quality.
-
