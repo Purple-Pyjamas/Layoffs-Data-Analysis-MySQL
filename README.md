@@ -1,10 +1,14 @@
-# :purple_square: Data Cleaning with MySQL
+# :purple_square: Data Analysis of a Layoff Dataset With MySQL
 
-End-to-end data cleaning of a layoffs dataset using MySQL, while including duplicate removal, standardization, null handling, date transformation, and self joins to prepare a clean, consistent, and reliable data for smoother operations and better decision making. This task was done to enhance productivity and save time for the team, reduce risk of chasing the wrong targets and to make visualization of data findings accurate and seamless.
+This project demonstrates an end-to-end SQL data analysis workflow using a global layoffs dataset. The project was completed in two main stages: Data Cleaning and Exploratory Data Analysis. I first cleaned and transformed the raw dataset in MySQL to improve its consistency and reliability. I thenanalysed the cleaned data to investigate layoff variations across companies, industries, countries, company stages, and time or seasonality.
 
+This task was not done only to enhance productivity and save time by preparing messy real-world data, reducing the risk of chasing the wrong targets and to make visualization of data findings accurate and seamless; It also shows how SQL can be used to uncover patterns and structure data for meaningful analysis.
+ 
 ---
 
 ## :clipboard: Project Overview
+
+### Data cleaning
 
 Raw data is rarely ready for analysis. In this project, I used **MySQL** to clean and prepare a layoffs dataset for analysis, focusing on improving data quality, consistency, and usability. The data showed varying numbers of employees who were laid off across various companies, as well as what stage those companies were in when the layoffs happened, and how much revenue was made in the same year. The cleaning process included:
 
@@ -19,6 +23,20 @@ Raw data is rarely ready for analysis. In this project, I used **MySQL** to clea
 * Removing temporary helper columns after cleaning
 
 The final result is a cleaner, more structured dataset that can be used for exploratory data analysis, visualization, or further business analysis.
+
+### Data Analysis Objectives
+
+The project focuses on answering the following questions:
+
+* Which companies recorded the highest total layoffs?
+* Which industries experienced the most layoffs?
+* Which countries were most affected?
+* How did layoffs change from year to year?
+* Which company stages experienced the highest layoffs?
+* How did layoffs evolve month by month?
+* What does the cumulative trend in layoffs look like?
+* Which five companies recorded the highest layoffs in each year?
+* Which companies laid off 100% of their reported workforce?
 
 ---
 
@@ -45,31 +63,39 @@ The final result is a cleaner, more structured dataset that can be used for expl
 * `IS NULL`
 * Pattern matching with `LIKE`
 * Data type conversion
+* `SELECT`
+* `GROUP BY`
+* `ORDER BY`
+* `SUM()`
+* `DENSE_RANK()`
+* `OVER()` 
 
 ---
 
-## :microscope: Methodology
+I only corrected grammar, punctuation, and readability while keeping the structure, meaning, SQL queries, and content unchanged.
 
-### 1. Created a Staging Table
+## :microscope: Methodology and Project Workflow
 
-Instead of modifying the raw dataset directly, I created a duplicate staging table. This helps to preserve the original data while allowing transformations to be carried out safely. It is especially useful when there is a need to reference the original data or when massive errors are made in the process.
+## 1. Data Cleaning
 
-```sql
-CREATE TABLE layoffs_staging
-LIKE layoffs;
+The first phase focused on transforming the raw layoffs dataset into a clean and reliable dataset suitable for analysis.
 
-INSERT layoffs_staging
+### 1.1 Creating a Staging Table
+
+Instead of modifying the original dataset directly, I created a copy of the dataset, titled it "layoffs_staging," and performed the cleaning process on that copy. This preserved the raw dataset while allowing transformations to be performed safely on the copy.
+
+`CREATE TABLE layoffs_staging
+LIKE layoffs;`
+
+`INSERT layoffs_staging
 SELECT *
-FROM layoffs;
-```
+FROM layoffs;`
 
+### 1.2 Removing Duplicate Records
 
-### 2. Removed Duplicate Records
+I used ROW_NUMBER() to identify records containing identical information across the relevant columns. Rows with a row_num greater than 1 were classified as duplicates and removed.
 
-I used the `ROW_NUMBER()` window function to assign a number to records sharing the same values across relevant columns.
-
-```sql
-ROW_NUMBER() OVER(
+`ROW_NUMBER() OVER(
     PARTITION BY company,
                  location,
                  industry,
@@ -79,118 +105,173 @@ ROW_NUMBER() OVER(
                  stage,
                  country,
                  funds_raised_millions
-) AS row_num
-```
+) AS row_num`
 
-Records with a `row_num` greater than `1` were identified as duplicates and removed.
+### 1.3 Standardizing Data
 
-This approach provides more control than simply using `SELECT DISTINCT`, especially when inspecting duplicate records before deleting them.
+Several inconsistencies were corrected to make categorical data more reliable. Examples include:
 
+`Company names:
+" Airbnb " → "Airbnb"`
 
-### 3. Standardized Company Names
+`Industry:
+CryptoCurrency → Crypto`
 
-Extra spaces in company names can cause the same company to appear as different categories during analysis. So, I removed unnecessary spaces using:
+`Country:
+United States. → United States`
 
-```sql
-UPDATE layoffs_staging2
-SET company = TRIM(company);
-```
+Company names were cleaned using TRIM(), similar industry categories were standardized, and unnecessary punctuation was removed from country names.
 
+### 1.4 Converting Dates
 
-### 4. Standardized Industry Categories
+The date column was originally stored as text. I converted it to MySQL's DATE datatype using:
 
-I inspected the distinct industry values to identify inconsistencies. For example, multiple industry labels beginning with **Crypto** were standardized into one category, instead of having some of them labelled "Cryptocurrency" and some labelled "Crypto":
+`UPDATE layoffs_staging2
+SET date = STR_TO_DATE(date, '%m/%d/%Y')`
 
-```sql
-UPDATE layoffs_staging2
-SET industry = 'Crypto'
-WHERE industry LIKE 'Crypto%';
-```
+`ALTER TABLE layoffs_staging2
+MODIFY COLUMN date DATE`
 
-This prevents similar categories from being treated as separate industries during analysis.
+### 1.5 Handling Missing Values
 
+Blank industry values were converted to NULL. Instead of immediately deleting records with missing industries, I investigated whether another record belonging to the same company contained the information. A self join was then used to populate the missing values:
 
-### 5. Standardized Country Names
-
-Some country values contained unnecessary trailing punctuation. These were cleaned to create consistent country categories.
-
-```sql
-UPDATE layoffs_staging2
-SET country = TRIM(TRAILING '.' FROM country)
-WHERE country LIKE 'United States%';
-```
-
-
-### 6. Converted the Date Column
-
-The date field was initially stored as text. I converted the values into MySQL's date format using:
-
-```sql
-STR_TO_DATE(date, '%m/%d/%Y')
-```
-
-Then changed the column datatype:
-
-```sql
-ALTER TABLE layoffs_staging2
-MODIFY COLUMN date DATE;
-```
-
-Using the correct datatype makes future time-series analysis, filtering, sorting, and aggregation much easier.
-
-
-### 7. Handled Null and Blank Values
-
-I inspected columns containing missing information, particularly the `industry` field. Blank industry values were first converted to `NULL`:
-
-```sql
-UPDATE layoffs_staging2
-SET industry = NULL
-WHERE industry = '';
-```
-
-
-### 8. Populated Missing Industry Data
-
-Some companies had multiple records where one record contained the industry, and another did not. I used a **self-join** to match companies with themselves and populate the missing industry values from records where that information already existed. This solved the missing data problem encountered in the previous step, and it allowed useful information already present within the dataset to be used instead of unnecessarily deleting those records.
-
-```sql
-UPDATE layoffs_staging2 t1
+`UPDATE layoffs_staging2 t1
 JOIN layoffs_staging2 t2
     ON t1.company = t2.company
 SET t1.industry = t2.industry
 WHERE t1.industry IS NULL
-AND t2.industry IS NOT NULL;
-```
+AND t2.industry IS NOT NULL`
 
+### 1.6 Removing Unusable Records
 
-### 9. Removed Unnecessary Data
+Records where both total_laid_off and percentage_laid_off were missing contained insufficient information for the analysis and were therefore removed. The temporary row_num helper column was also removed.
 
-Records where both:
-
-* `total_laid_off` was NULL
-* `percentage_laid_off` was NULL
-
-contained insufficient information for meaningful layoff analysis.
-
-These records were removed:
-
-```sql
-DELETE
+`DELETE
 FROM layoffs_staging2
 WHERE total_laid_off IS NULL
-AND percentage_laid_off IS NULL;
-```
+AND percentage_laid_off IS NULL`
 
+## 2. Exploratory Data Analysis
 
-### 10. Removed Temporary Columns
+After cleaning the dataset, I used SQL to explore patterns in the layoffs data.
 
-The `row_num` column was created only to help identify duplicates. After it had served its purpose, I removed it:
+### 2.1 Maximum Layoffs
 
-```sql
-ALTER TABLE layoffs_staging2
-DROP COLUMN row_num;
-```
+I began by examining the maximum number of employees laid off and the maximum percentage of employees laid off. I also ordered these companies by the amount of funding they had raised to explore whether heavily funded companies were among the businesses that reported complete workforce layoffs.
+
+`SELECT MAX(total_laid_off),
+       MAX(percentage_laid_off)
+FROM layoffs_staging2;`
+
+`SELECT *
+FROM layoffs_staging2
+WHERE percentage_laid_off = 1
+ORDER BY total_laid_off DESC;`
+
+`Total Layoffs by Company
+SELECT company,
+       SUM(total_laid_off)
+FROM layoffs_staging2
+GROUP BY company
+ORDER BY 2 DESC;`
+
+This identifies companies with the largest cumulative layoffs in the dataset.
+
+`Layoffs by Industry
+SELECT industry,
+       SUM(total_laid_off)
+FROM layoffs_staging2
+GROUP BY industry
+ORDER BY 2 DESC;`
+
+This allows for comparison of the impact of layoffs across industries.
+
+`Layoffs by Country
+SELECT country,
+       SUM(total_laid_off)
+FROM layoffs_staging2
+GROUP BY country
+ORDER BY 2 DESC;`
+
+This identifies countries with the highest reported layoffs.
+
+`Layoffs by Year
+SELECT YEAR(date),
+       SUM(total_laid_off)
+FROM layoffs_staging2
+GROUP BY YEAR(date)
+ORDER BY 1 DESC;`
+
+This shows how layoffs changed over time.
+
+`Layoffs by Company Stage
+SELECT stage,
+       SUM(total_laid_off)
+FROM layoffs_staging2
+GROUP BY stage
+ORDER BY 2 DESC;`
+
+This helps investigate whether layoffs were concentrated among startups, established companies, public companies, or businesses at other funding stages.
+
+### 2.3 Monthly Layoff Trends
+
+I aggregated layoffs by month to examine shorter-term trends.
+
+`SELECT SUBSTRING(date,1,7) AS MONTH,
+       SUM(total_laid_off)
+FROM layoffs_staging2
+WHERE SUBSTRING(date,1,7) IS NOT NULL
+GROUP BY MONTH
+ORDER BY 1;`
+
+### 2.4 Rolling Total of Layoffs
+
+To understand how layoffs accumulated over time, I combined a Common Table Expression with a window function.
+
+`WITH Rolling_Total AS
+(
+    SELECT SUBSTRING(date,1,7) AS MONTH,
+           SUM(total_laid_off) AS total_off
+    FROM layoffs_staging2
+    WHERE SUBSTRING(date,1,7) IS NOT NULL
+    GROUP BY MONTH
+)
+SELECT MONTH,
+       total_off,
+       SUM(total_off) OVER(ORDER BY MONTH) AS rolling_total
+FROM Rolling_Total;`
+
+This produces both monthly layoffs and their cumulative total.
+
+### 2.5 Top Companies by Layoffs Each Year
+
+One of the more advanced parts of the project was identifying the companies with the highest layoffs in each year. First, layoffs were aggregated by company and year. Then, DENSE_RANK() was used to rank companies independently within each year.
+
+`WITH Company_Year (company, years, total_laid_off) AS
+(
+    SELECT company,
+           YEAR(date),
+           SUM(total_laid_off)
+    FROM layoffs_staging2
+    GROUP BY company, YEAR(date)
+),
+Company_Year_Rank AS
+(
+    SELECT *,
+           DENSE_RANK() OVER(
+               PARTITION BY years
+               ORDER BY total_laid_off DESC
+           ) AS Ranking
+    FROM Company_Year
+    WHERE years IS NOT NULL
+)`
+
+`SELECT *
+FROM Company_Year_Rank
+WHERE Ranking <= 5;`
+
+This returns the top five companies by total layoffs for each year represented in the dataset.
 
 ---
 
@@ -200,18 +281,18 @@ This project reinforced an important lesson:
 
 > Data cleaning is not simply about deleting missing values. It requires understanding what each record represents and deciding how inconsistencies should be handled without unnecessarily losing useful information.
 
-I also gained practical experience using SQL techniques such as:
-
-* Window functions for duplicate detection
-* Self joins for filling missing information
-* String functions for standardization
-* Data transformations
-* Null-value handling
-* Safe staging-table workflows
-
 ---
 
-## :dart: Skills Demonstrated
+## :dart: Skills Demonstrated in this Project
+
+| Area	              | Skills                                                                 |
+| Data Cleaning	      | Duplicate removal, null handling, standardization and string functions |
+| Data Transformation |	Date conversion, categorical normalization                             |
+| SQL Analysis	      | Aggregation, grouping, filtering                                       | 
+| Advanced SQL	      | CTEs, self joins, window functions                                     | 
+| Trend Analysis	  | Monthly and yearly analysis                                            |
+| Ranking Analysis	  | DENSE_RANK() and PARTITION BY                                          | 
+| Data Quality	      | Staging-table workflow and missing-value investigation                 |
 
 **Data Cleaning • SQL • MySQL • Data Quality • Data Transformation • Window Functions • CTEs • Joins • Data Standardization • Missing Data Handling**
 
@@ -219,28 +300,22 @@ I also gained practical experience using SQL techniques such as:
 
 ## ❓ Possible Next Steps
 
-The cleaned dataset can now be used for exploratory data analysis to answer questions such as:
+The next stage of this project could include:
 
-* Which industries recorded the most layoffs?
-* Which companies had the largest layoffs?
-* How have layoffs changed over time?
-* Which countries experienced the highest layoffs?
-* Are layoffs concentrated in particular company stages?
-* How do layoffs vary by year and month?
+* Building an interactive Power BI or Tableau dashboard
+* Visualizing monthly layoff trends
+* Comparing industries across time
+* Examining geographic concentration of layoffs
+* Investigating relationships between company funding and layoffs
+* Creating additional KPIs and business-focused insights
 
 ---
 
-## :open_file_folder: Repository Structure
+## :mailbox: Contact
 
-```
-Data-Cleaning-mySQL/
-│
-├── README.md
-│
-│
-├── layoffs.csv               dataset
-│   
-│
-├── data_cleaning.sql         cleaned SQL data
-```
----
+**Uchechukwu Esther Okwudili**  
+:e-mail: [Send me an email](ucokwudili27@gmail.com)
+:briefcase: [My Linkedin profile](www.linkedin.com/in/uchechukwu-okwudili-a7437933a)
+:globe_with_meridians: [View my Portfolio]()
+
+
