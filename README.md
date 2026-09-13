@@ -1,7 +1,8 @@
 # :purple_square: Data Analysis of a Layoff Dataset With MySQL
 
 This project demonstrates an end-to-end SQL data analysis workflow using a global layoffs dataset. The project was completed in two main stages: Data Cleaning and Exploratory Data Analysis. 
-I first cleaned and transformed the raw dataset in MySQL to improve its consistency and reliability. I thenanalysed the cleaned data to investigate layoff variations across companies, industries, countries, company stages, and time or seasonality.
+
+I first cleaned and transformed the raw dataset in MySQL to improve its consistency and reliability. I then analyzed the cleaned data to investigate layoff variations across companies, industries, countries, company stages, and time or seasonality.
 
 This task was not done only to enhance productivity and save time by preparing messy real-world data, reducing the risk of chasing the wrong targets and to make visualization of data findings accurate and seamless; It also shows how SQL can be used to uncover patterns and structure data for meaningful analysis.
  
