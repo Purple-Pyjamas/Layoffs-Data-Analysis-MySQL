@@ -286,6 +286,7 @@ This project reinforced an important lesson:
 ## :dart: Skills Demonstrated in this Project
 
 | Area	              | Skills                                                                 |
+|--------------------|------------------------------------------------------------------------|
 | Data Cleaning	      | Duplicate removal, null handling, standardization and string functions |
 | Data Transformation |	Date conversion, categorical normalization                             |
 | SQL Analysis	      | Aggregation, grouping, filtering                                       | 
