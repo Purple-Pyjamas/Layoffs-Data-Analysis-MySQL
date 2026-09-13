@@ -316,9 +316,7 @@ The next stage of this project could include:
 
 **Uchechukwu Esther Okwudili**  
 :e-mail: [Send me an email](ucokwudili27@gmail.com)
-
 :briefcase: [My Linkedin profile](www.linkedin.com/in/uchechukwu-okwudili-a7437933a)
-
 :globe_with_meridians: [View my Portfolio]()
 
 
