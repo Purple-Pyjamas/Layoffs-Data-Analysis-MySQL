@@ -72,8 +72,6 @@ The project focuses on answering the following questions:
 
 ---
 
-I only corrected grammar, punctuation, and readability while keeping the structure, meaning, SQL queries, and content unchanged.
-
 ## :microscope: Methodology and Project Workflow
 
 ## 1. Data Cleaning
